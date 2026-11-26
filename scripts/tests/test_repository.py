@@ -116,7 +116,8 @@ class SupplyChainRegressionTests(unittest.TestCase):
     def test_pip_installs_are_pinned(self):
         for workflow, number, line in self.workflow_lines():
             if "pip install" in line:
-                packages = [arg for arg in line.split("pip install", 1)[1].split() if not arg.startswith("-")]
+                arguments = line.split("pip install", 1)[1].replace("--only-binary :all:", "").split()
+                packages = [arg for arg in arguments if not arg.startswith("-")]
                 for package in packages:
                     with self.subTest(workflow=workflow, line=number, package=package):
                         self.assertIn("==", package)
