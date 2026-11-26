@@ -48,6 +48,8 @@ targets:
         AppEnvironment: $(APP_ENV)
         UILaunchScreen:
           UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIUserInterfaceStyle: Dark
     settings:
