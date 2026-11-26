@@ -115,6 +115,24 @@ class SupplyChainRegressionTests(unittest.TestCase):
                         self.assertIn("==", package)
 
 
+class SonarConfigurationRegressionTests(unittest.TestCase):
+    """Bug: the scanner ignored sonar.sources/sonar.tests, so test files counted as uncovered code."""
+
+    def properties(self) -> str:
+        return (ROOT / "sonar-project.properties").read_text(encoding="utf-8")
+
+    def test_does_not_rely_on_ignored_scope_properties(self):
+        for key in ["sonar.sources=", "sonar.tests="]:
+            with self.subTest(key=key):
+                self.assertNotIn(key, self.properties())
+
+    def test_test_folders_are_excluded_from_coverage(self):
+        coverage_exclusions = self.properties().split("sonar.coverage.exclusions=", 1)[1].split("\n\n", 1)[0]
+        for pattern in ["AppTests/**", "**/Tests/**", "scripts/tests/**"]:
+            with self.subTest(pattern=pattern):
+                self.assertIn(pattern, coverage_exclusions)
+
+
 class DependabotRegressionTests(unittest.TestCase):
     """Bug: Dependabot opened pull requests directly against main."""
 
