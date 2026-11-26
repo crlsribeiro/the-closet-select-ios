@@ -91,3 +91,10 @@ func lookAlwaysHasFootwear() async throws { … }
 - The `Regression` test plan runs on every PR.
 - Danger fails a `fix/*` PR that does not touch any test.
 - Visual bugs → snapshot test; flow bugs → XCUITest in `UITests/Regression/`.
+- **Pipeline and configuration bugs** (CI workflows, `.gitignore`, Dependabot, coverage scripts) are regression-tested too, in `scripts/tests/` (Python `unittest`), run by the `Repository regression tests` job:
+
+```bash
+python3 -m unittest discover -s scripts/tests -v
+```
+
+A regression test is only accepted if it **fails when the bug is reintroduced**. Check it locally before opening the PR.
