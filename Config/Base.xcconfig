@@ -3,5 +3,8 @@ BASE_BUNDLE_ID = app.carlosribeiro.closetselect
 MARKETING_VERSION = 0.1.0
 CURRENT_PROJECT_VERSION = 1
 
+// Minimum iOS version for every target (ADR 0005).
+IPHONEOS_DEPLOYMENT_TARGET = 18.0
+
 // Signing team is personal: put DEVELOPMENT_TEAM = XXXXXXXXXX in Config/Local.xcconfig (git-ignored).
 #include? "Local.xcconfig"
