@@ -35,8 +35,8 @@ fastlane/test_output
 
 # Test & coverage output
 *.xcresult
-coverage/
-sonar-report/
+/coverage/
+/sonar-report/
 
 # Secrets and per-environment config (provided by CI)
 GoogleService-Info*.plist
