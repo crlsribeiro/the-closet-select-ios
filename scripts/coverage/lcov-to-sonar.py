@@ -9,46 +9,66 @@ Only files under the given source prefix are kept. The report must be inside the
 import os
 import sys
 from pathlib import Path
+from typing import Iterable
 from xml.sax.saxutils import quoteattr
+
+Coverage = dict[str, dict[int, bool]]
+
+
+class OutsideRepositoryError(ValueError):
+    """Raised when a user-supplied path points outside the repository (path traversal)."""
 
 
 def resolve_inside(root: Path, candidate: str) -> Path:
-    """Resolve a user-supplied path and refuse anything outside the repository (path traversal)."""
+    """Resolve a user-supplied path and refuse anything outside the repository."""
     path = (root / candidate).resolve()
     if not path.is_relative_to(root):
-        sys.exit(f"error: {candidate} is outside the repository")
+        raise OutsideRepositoryError(f"{candidate} is outside the repository")
     return path
 
 
-def main() -> None:
-    if len(sys.argv) != 3:
-        sys.exit("usage: lcov-to-sonar.py <report.lcov> <source-prefix>")
-    root = Path.cwd().resolve()
-    lcov_path = resolve_inside(root, sys.argv[1])
-    prefix = sys.argv[2]
-
-    files: dict[str, dict[int, bool]] = {}
+def parse_lcov(lines: Iterable[str], root: Path, prefix: str) -> Coverage:
+    """Return covered state per line for every source file under `prefix`, relative to `root`."""
+    files: Coverage = {}
     current = None
-    with lcov_path.open(encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if line.startswith("SF:"):
-                path = os.path.relpath(os.path.realpath(line[3:]), root)
-                current = files.setdefault(path, {}) if path.startswith(prefix) else None
-            elif line.startswith("DA:") and current is not None:
-                number, count = line[3:].split(",")[:2]
-                current[int(number)] = current.get(int(number), False) or int(count) > 0
-            elif line == "end_of_record":
-                current = None
+    for raw in lines:
+        line = raw.strip()
+        if line.startswith("SF:"):
+            path = os.path.relpath(os.path.realpath(line[3:]), root)
+            current = files.setdefault(path, {}) if path.startswith(prefix) else None
+        elif line.startswith("DA:") and current is not None:
+            number, count = line[3:].split(",")[:2]
+            current[int(number)] = current.get(int(number), False) or int(count) > 0
+        elif line == "end_of_record":
+            current = None
+    return files
 
-    print('<coverage version="1">')
+
+def to_sonar_xml(files: Coverage) -> str:
+    output = ['<coverage version="1">']
     for path, lines in sorted(files.items()):
-        print(f"  <file path={quoteattr(path)}>")
+        output.append(f"  <file path={quoteattr(path)}>")
         for number, covered in sorted(lines.items()):
-            print(f'    <lineToCover lineNumber="{number}" covered="{str(covered).lower()}"/>')
-        print("  </file>")
-    print("</coverage>")
+            output.append(f'    <lineToCover lineNumber="{number}" covered="{str(covered).lower()}"/>')
+        output.append("  </file>")
+    output.append("</coverage>")
+    return "\n".join(output)
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) != 3:
+        print("usage: lcov-to-sonar.py <report.lcov> <source-prefix>", file=sys.stderr)
+        return 2
+    root = Path.cwd().resolve()
+    try:
+        report = resolve_inside(root, argv[1])
+    except OutsideRepositoryError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+    with report.open(encoding="utf-8") as handle:
+        print(to_sonar_xml(parse_lcov(handle, root, argv[2])))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv))
