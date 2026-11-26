@@ -57,3 +57,4 @@ App/Info.plist
 
 # Personal signing settings
 Config/Local.xcconfig
+.coverage
