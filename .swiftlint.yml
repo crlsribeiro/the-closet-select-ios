@@ -1,0 +1,53 @@
+# SwiftLint configuration — rules are part of the Definition of Done.
+included:
+  - App
+  - Packages
+  - Widgets
+excluded:
+  - "**/.build"
+  - "**/DerivedData"
+
+opt_in_rules:
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - empty_count
+  - first_where
+  - sorted_first_last
+  - contains_over_filter_count
+  - redundant_nil_coalescing
+  - closure_spacing
+  - explicit_init
+  - fatal_error_message
+  - private_action
+  - private_outlet
+  - prefer_self_type_over_type_of_self
+  - unowned_variable_capture
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+
+force_cast: error
+force_try: error
+force_unwrapping: error
+
+function_body_length:
+  warning: 40
+  error: 60
+file_length:
+  warning: 400
+  error: 600
+type_body_length:
+  warning: 250
+  error: 400
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: true
+  ignores_urls: true
+identifier_name:
+  min_length: 2
+  excluded: [id, x, y]
+
+reporter: xcode

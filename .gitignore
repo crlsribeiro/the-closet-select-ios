@@ -1,0 +1,53 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+
+# Generated Xcode project (created by XcodeGen from project.yml)
+*.xcodeproj
+*.xcworkspace
+!*.xcodeproj/project.xcworkspace
+!Packages/**/*.xcworkspace
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/**/.build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Test & coverage output
+*.xcresult
+coverage/
+sonar-report/
+
+# Secrets and per-environment config (provided by CI)
+GoogleService-Info*.plist
+Config/Secrets*.xcconfig
+*.p12
+*.mobileprovision
+.env
+.env.*
+
+# Local assistant / editor files (never committed)
+CLAUDE.md
+.claude/
+.vscode/
+.idea/

@@ -1,0 +1,13 @@
+# SwiftFormat configuration (runs on pre-commit and in CI with --lint)
+--swiftversion 6.0
+--indent 4
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--self remove
+--importgrouping testable-bottom
+--stripunusedargs closure-only
+--header strip
+--exclude **/.build,**/DerivedData

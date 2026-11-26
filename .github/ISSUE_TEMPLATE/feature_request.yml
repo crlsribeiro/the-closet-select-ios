@@ -1,0 +1,35 @@
+name: User story
+description: A new feature, written as a user story with Gherkin acceptance criteria.
+title: "feat: "
+labels: ["story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      value: |
+        As a <persona>
+        I want <goal>
+        So that <benefit>
+    validations:
+      required: true
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: Acceptance criteria (Gherkin)
+      render: gherkin
+      value: |
+        Scenario: <name>
+          Given <context>
+          When <action>
+          Then <outcome>
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design / mockup link
+  - type: textarea
+    id: notes
+    attributes:
+      label: Out of scope / notes

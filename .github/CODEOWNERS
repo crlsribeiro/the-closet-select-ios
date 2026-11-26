@@ -1,0 +1,11 @@
+# Default owner for everything
+*                               @crlsribeiro
+
+# Regression tests can never be removed or weakened without the owner's review
+**/Tests/**/Regression/         @crlsribeiro
+**/UITests/Regression/          @crlsribeiro
+
+# Pipeline, environments and quality rules
+/.github/                       @crlsribeiro
+/Config/                        @crlsribeiro
+/.swiftlint.yml                 @crlsribeiro
