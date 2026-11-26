@@ -21,7 +21,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -42,10 +42,10 @@ jobs:
     name: Secrets scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -53,18 +53,18 @@ jobs:
     name: Repository regression tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install test dependencies
-        run: python3 -m pip install --quiet pyyaml
+        run: python3 -m pip install --quiet pyyaml==6.0.2
       - name: Pipeline and configuration regression tests
         run: python3 -m unittest discover -s scripts/tests -v
 
   swiftlint:
     name: SwiftLint
     runs-on: ubuntu-latest
-    container: ghcr.io/realm/swiftlint:latest
+    container: ghcr.io/realm/swiftlint:0.65.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Lint
         run: |
           if find . -name '*.swift' -not -path './.build/*' | grep -q .; then
@@ -78,11 +78,11 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Core
-        run: swift test --package-path Packages/Core
+        run: swift test --force-resolved-versions --package-path Packages/Core
       - name: DesignSystem (platform-independent parts)
-        run: swift test --package-path Packages/DesignSystem
+        run: swift test --force-resolved-versions --package-path Packages/DesignSystem
 
   ios:
     name: iOS build, tests and Sonar
@@ -92,7 +92,7 @@ jobs:
       # Only a boolean reaches the job; the token itself is scoped to the Sonar step.
       HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
       - name: Show Xcode version
@@ -135,25 +135,25 @@ jobs:
       - name: Package tests with coverage (macOS, includes SwiftUI parts)
         run: |
           for package in Core DesignSystem; do
-            swift test --package-path "Packages/$package" --enable-code-coverage
-            bin=$(swift build --package-path "Packages/$package" --show-bin-path)
+            swift test --force-resolved-versions --package-path "Packages/$package" --enable-code-coverage
+            bin=$(swift build --force-resolved-versions --package-path "Packages/$package" --show-bin-path)
             name=$(echo "$package" | tr '[:upper:]' '[:lower:]')
             xcrun llvm-cov export -format=lcov \
               -instr-profile "$bin/codecov/default.profdata" \
               "$bin/${package}PackageTests.xctest/Contents/MacOS/${package}PackageTests" \
               > "coverage/$name.lcov"
-            python3 scripts/coverage/lcov-to-sonar.py "coverage/$name.lcov" . "Packages/$package/Sources" \
+            python3 scripts/coverage/lcov-to-sonar.py "coverage/$name.lcov" "Packages/$package/Sources" \
               > "coverage/$name.xml"
           done
       - name: SonarQube Cloud analysis and Quality Gate
         if: env.HAS_SONAR_TOKEN == 'true'
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5.3.2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: TestResults
           path: TestResults.xcresult

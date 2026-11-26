@@ -99,6 +99,13 @@ class SupplyChainRegressionTests(unittest.TestCase):
                 with self.subTest(workflow=workflow, line=number):
                     self.assertIn("--force-resolved-versions", line)
 
+    def test_container_images_use_a_fixed_version(self):
+        for workflow, number, line in self.workflow_lines():
+            match = re.search(r"container:\s*(\S+)", line)
+            if match:
+                with self.subTest(workflow=workflow, line=number):
+                    self.assertRegex(match.group(1), r":(?!latest$)[\w.-]+$", "use a version tag, never latest")
+
     def test_pip_installs_are_pinned(self):
         for workflow, number, line in self.workflow_lines():
             if "pip install" in line:

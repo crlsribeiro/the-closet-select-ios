@@ -4,7 +4,14 @@
 set -euo pipefail
 
 xcresult="$1"
-repo_root="$(pwd)"
+repo_root="$(pwd -P)"
+
+# Refuse results outside the repository (path traversal).
+xcresult_dir="$(cd "$(dirname "$xcresult")" && pwd -P)"
+case "$xcresult_dir/" in
+    "$repo_root"/*) ;;
+    *) echo "error: $xcresult is outside the repository" >&2; exit 1 ;;
+esac
 
 echo '<coverage version="1">'
 xcrun xccov view --archive --file-list "$xcresult" | while read -r file; do
