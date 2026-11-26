@@ -1,0 +1,5 @@
+#include "Base.xcconfig"
+
+APP_ENV = dev
+APP_DISPLAY_NAME = Closet Dev
+PRODUCT_BUNDLE_IDENTIFIER = $(BASE_BUNDLE_ID).dev

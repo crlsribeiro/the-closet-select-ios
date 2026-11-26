@@ -1,0 +1,106 @@
+name: TheClosetSelect
+
+options:
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+configs:
+  Dev: debug
+  QA: release
+  Prod: release
+
+configFiles:
+  Dev: Config/Dev.xcconfig
+  QA: Config/QA.xcconfig
+  Prod: Config/Prod.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+
+packages:
+  Core:
+    path: Packages/Core
+  DesignSystem:
+    path: Packages/DesignSystem
+
+targets:
+  TheClosetSelect:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, pt-BR]
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AppEnvironment: $(APP_ENV)
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIUserInterfaceStyle: Dark
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - package: Core
+      - package: DesignSystem
+
+  TheClosetSelectTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BASE_BUNDLE_ID).tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: TheClosetSelect
+
+schemes:
+  TheClosetSelect-Dev:
+    build:
+      targets:
+        TheClosetSelect: all
+        TheClosetSelectTests: [test]
+    run:
+      config: Dev
+    test:
+      config: Dev
+      gatherCoverageData: true
+      targets:
+        - TheClosetSelectTests
+    archive:
+      config: Dev
+
+  TheClosetSelect-QA:
+    build:
+      targets:
+        TheClosetSelect: all
+    run:
+      config: QA
+    archive:
+      config: QA
+
+  TheClosetSelect-Prod:
+    build:
+      targets:
+        TheClosetSelect: all
+    run:
+      config: Prod
+    archive:
+      config: Prod
