@@ -55,7 +55,8 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install test dependencies
-        run: python3 -m pip install --quiet --only-binary :all: pyyaml==6.0.2
+        run: |
+          python3 -m pip install --quiet --only-binary :all: pyyaml==6.0.2
       - name: Pipeline and configuration regression tests
         run: python3 -m unittest discover -s scripts/tests -v
 
