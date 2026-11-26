@@ -78,6 +78,36 @@ class WorkflowSecurityRegressionTests(unittest.TestCase):
                                         "secrets belong in a step-level env")
 
 
+class SupplyChainRegressionTests(unittest.TestCase):
+    """Sonar vulnerabilities: actions referenced by movable tags and dependencies resolved without a lock."""
+
+    def workflow_lines(self):
+        for workflow in WORKFLOWS:
+            for number, line in enumerate(workflow.read_text(encoding="utf-8").splitlines(), start=1):
+                yield workflow.name, number, line
+
+    def test_actions_are_pinned_to_a_full_commit_sha(self):
+        for workflow, number, line in self.workflow_lines():
+            match = re.search(r"uses:\s*([^\s#]+)", line)
+            if match and not match.group(1).startswith("./"):
+                with self.subTest(workflow=workflow, line=number):
+                    self.assertRegex(match.group(1), r"@[0-9a-f]{40}$", "pin the action to a commit SHA")
+
+    def test_swift_package_commands_use_resolved_versions(self):
+        for workflow, number, line in self.workflow_lines():
+            if re.search(r"\bswift (build|test)\b", line):
+                with self.subTest(workflow=workflow, line=number):
+                    self.assertIn("--force-resolved-versions", line)
+
+    def test_pip_installs_are_pinned(self):
+        for workflow, number, line in self.workflow_lines():
+            if "pip install" in line:
+                packages = [arg for arg in line.split("pip install", 1)[1].split() if not arg.startswith("-")]
+                for package in packages:
+                    with self.subTest(workflow=workflow, line=number, package=package):
+                        self.assertIn("==", package)
+
+
 class DependabotRegressionTests(unittest.TestCase):
     """Bug: Dependabot opened pull requests directly against main."""
 

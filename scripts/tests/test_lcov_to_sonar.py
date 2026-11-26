@@ -10,15 +10,22 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "coverage" / "lcov-to-sonar.py"
 
 
+def run_script(report_argument: str, prefix: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), report_argument, prefix],
+        cwd=ROOT, check=False, capture_output=True, text=True,
+    )
+
+
 def convert(lcov: str, prefix: str) -> ElementTree.Element:
-    with tempfile.TemporaryDirectory() as folder:
+    reports = ROOT / "coverage"
+    reports.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=reports) as folder:
         report = Path(folder) / "report.lcov"
         report.write_text(lcov.replace("{root}", str(ROOT)), encoding="utf-8")
-        output = subprocess.run(
-            [sys.executable, str(SCRIPT), str(report), str(ROOT), prefix],
-            check=True, capture_output=True, text=True,
-        ).stdout
-    return ElementTree.fromstring(output)
+        result = run_script(str(report.relative_to(ROOT)), prefix)
+    result.check_returncode()
+    return ElementTree.fromstring(result.stdout)
 
 
 def lines_of(element: ElementTree.Element) -> dict:
@@ -51,6 +58,26 @@ class LcovToSonarTests(unittest.TestCase):
 
         self.assertEqual(report.tag, "coverage")
         self.assertEqual(len(report), 0)
+
+
+class LcovToSonarPathTraversalRegressionTests(unittest.TestCase):
+    """Sonar vulnerability: the script opened any path given on the command line."""
+
+    def test_rejects_a_report_outside_the_repository(self):
+        with tempfile.TemporaryDirectory() as outside:
+            report = Path(outside) / "report.lcov"
+            report.write_text("", encoding="utf-8")
+
+            result = run_script(str(report), "Packages/Core/Sources")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("outside the repository", result.stderr)
+
+    def test_rejects_parent_directory_traversal(self):
+        result = run_script("../../etc/passwd", "Packages/Core/Sources")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("outside the repository", result.stderr)
 
 
 if __name__ == "__main__":
