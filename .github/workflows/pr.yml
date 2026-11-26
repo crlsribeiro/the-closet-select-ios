@@ -60,5 +60,61 @@ jobs:
             echo "No Swift files yet, skipping."
           fi
 
-  # Build, unit/acceptance/snapshot tests and the Sonar Quality Gate are added
-  # together with the Xcode project in the Sprint 0 scaffold PR (macOS runner).
+  packages-linux:
+    name: Package tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core
+        run: swift test --package-path Packages/Core
+      - name: DesignSystem (platform-independent parts)
+        run: swift test --package-path Packages/DesignSystem
+
+  ios:
+    name: iOS build and tests
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Pick an iPhone simulator
+        id: simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          runtimes = json.load(sys.stdin)["devices"]
+          for runtime in sorted(runtimes, reverse=True):
+              if "iOS" not in runtime:
+                  continue
+              for device in runtimes[runtime]:
+                  if device["name"].startswith("iPhone"):
+                      print(device["udid"])
+                      sys.exit(0)
+          sys.exit(1)
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Build and test (Dev)
+        run: |
+          xcodebuild test \
+            -project TheClosetSelect.xcodeproj \
+            -scheme TheClosetSelect-Dev \
+            -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+      - name: DesignSystem tests on macOS (SwiftUI parts compile)
+        run: swift test --package-path Packages/DesignSystem
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: TestResults.xcresult
+
+  # Sonar Quality Gate and Danger are added in the next PRs.
