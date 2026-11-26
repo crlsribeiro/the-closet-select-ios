@@ -79,7 +79,8 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 40
     env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # Only a boolean reaches the job; the token itself is scoped to the Sonar step.
+      HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -107,11 +108,13 @@ jobs:
           ')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
       - name: Build and test (Dev)
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           xcodebuild test \
             -project TheClosetSelect.xcodeproj \
             -scheme TheClosetSelect-Dev \
-            -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -destination "id=$SIMULATOR_UDID" \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \
             -quiet
@@ -133,9 +136,10 @@ jobs:
               > "coverage/$name.xml"
           done
       - name: SonarQube Cloud analysis and Quality Gate
-        if: env.SONAR_TOKEN != ''
+        if: env.HAS_SONAR_TOKEN == 'true'
         uses: SonarSource/sonarqube-scan-action@v5
         env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload test results
         if: failure()
