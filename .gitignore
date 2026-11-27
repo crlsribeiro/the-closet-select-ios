@@ -58,3 +58,7 @@ App/Info.plist
 # Personal signing settings
 Config/Local.xcconfig
 .coverage
+
+# Python cache
+__pycache__/
+*.pyc
