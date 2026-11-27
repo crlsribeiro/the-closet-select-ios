@@ -1,0 +1,22 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "root.environment %@" : {
+      "comment" : "VoiceOver label for the environment badge. %@ is DEV or QA.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Environment: %@" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ambiente: %@" } }
+      }
+    },
+    "root.tagline" : {
+      "comment" : "Tagline under the app name on the root screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your look of the day, ready." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Seu look do dia, pronto." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

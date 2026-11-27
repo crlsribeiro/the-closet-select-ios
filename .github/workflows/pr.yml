@@ -1,24 +1,27 @@
-name: PR checks
+name: CI
 
 on:
   pull_request:
     branches: [main, qa, develop]
     types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main, qa, develop]
 
 permissions:
   contents: read
   pull-requests: read
 
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   pr-title:
     name: Conventional PR title
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@c5e23b7e584519ee15caa684cf60d056aa9f035f # v6.1.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -39,19 +42,33 @@ jobs:
     name: Secrets scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  repository-checks:
+    name: Repository regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --quiet --only-binary :all: pyyaml==6.0.3
+      - name: Pipeline and configuration regression tests
+        run: python -m unittest discover -s scripts/tests -v
 
   swiftlint:
     name: SwiftLint
     runs-on: ubuntu-latest
-    container: ghcr.io/realm/swiftlint:latest
+    container: ghcr.io/realm/swiftlint:0.65.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Lint
         run: |
           if find . -name '*.swift' -not -path './.build/*' | grep -q .; then
@@ -60,5 +77,99 @@ jobs:
             echo "No Swift files yet, skipping."
           fi
 
-  # Build, unit/acceptance/snapshot tests and the Sonar Quality Gate are added
-  # together with the Xcode project in the Sprint 0 scaffold PR (macOS runner).
+  packages-linux:
+    name: Package tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Core
+        run: swift test --force-resolved-versions --package-path Packages/Core
+      - name: DesignSystem (platform-independent parts)
+        run: swift test --force-resolved-versions --package-path Packages/DesignSystem
+
+  ios:
+    name: iOS build, tests and Sonar
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      # Only a boolean reaches the job; the token itself is scoped to the Sonar step.
+      HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Pick an iPhone simulator
+        id: simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          runtimes = json.load(sys.stdin)["devices"]
+          for runtime in sorted(runtimes, reverse=True):
+              if "iOS" not in runtime:
+                  continue
+              for device in runtimes[runtime]:
+                  if device["name"].startswith("iPhone"):
+                      print(device["udid"])
+                      sys.exit(0)
+          sys.exit(1)
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Build and test (Dev)
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
+        run: |
+          xcodebuild test \
+            -project TheClosetSelect.xcodeproj \
+            -scheme TheClosetSelect-Dev \
+            -destination "id=$SIMULATOR_UDID" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+      - name: App coverage report
+        run: |
+          mkdir -p coverage
+          scripts/coverage/xccov-to-sonar.sh TestResults.xcresult > coverage/app.xml
+      - name: Package tests with coverage (macOS, includes SwiftUI parts)
+        run: |
+          for package in Core DesignSystem; do
+            swift test --force-resolved-versions --package-path "Packages/$package" --enable-code-coverage
+            bin=$(swift build --force-resolved-versions --package-path "Packages/$package" --show-bin-path)
+            name=$(echo "$package" | tr '[:upper:]' '[:lower:]')
+            xcrun llvm-cov export -format=lcov \
+              -instr-profile "$bin/codecov/default.profdata" \
+              "$bin/${package}PackageTests.xctest/Contents/MacOS/${package}PackageTests" \
+              > "coverage/$name.lcov"
+            python3 scripts/coverage/lcov-to-sonar.py "coverage/$name.lcov" "Packages/$package/Sources" \
+              > "coverage/$name.xml"
+          done
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Pipeline script tests with coverage
+        env:
+          COVERAGE_FILE: coverage/.coverage
+        run: |
+          python -m pip install --quiet --only-binary :all: pyyaml==6.0.3 coverage==7.17.5
+          python -m coverage run --source=scripts -m unittest discover -s scripts/tests
+          python -m coverage xml -o coverage/python.xml
+      - name: SonarQube Cloud analysis and Quality Gate
+        if: env.HAS_SONAR_TOKEN == 'true'
+        uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: TestResults
+          path: TestResults.xcresult
+
+  # Danger is added in a next PR.

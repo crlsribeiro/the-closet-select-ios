@@ -14,6 +14,16 @@
 
 Rules: no real network in unit tests; Given/When/Then naming; a flaky test is a bug — never disabled to get green.
 
+### Coverage policy
+
+The Sonar Quality Gate requires **≥ 80% unit-test coverage on new code**. Coverage counts **logic**: ViewModels, use cases, the look engine, models, mappers and utilities.
+
+**Presentation-only SwiftUI code** — `View` types, the `@main` entry point and purely visual DesignSystem modifiers (color mapping, glass, skeleton) — is excluded from unit coverage in `sonar-project.properties` and verified by **snapshot tests** instead. Rules for this exclusion:
+
+- A file is excluded only if it contains no decisions. Any logic in a View moves to its ViewModel.
+- Every excluded screen or modifier gets snapshot tests (light/dark, Dynamic Type, en/pt-BR, skeleton).
+- New exclusions are reviewed in the PR like any other code change.
+
 Test plans: `Fast` (unit + snapshot, < 1 min locally), `PR`, `Regression`, `Nightly`.
 
 ## How TDD, BDD and regression fit together
@@ -81,3 +91,10 @@ func lookAlwaysHasFootwear() async throws { … }
 - The `Regression` test plan runs on every PR.
 - Danger fails a `fix/*` PR that does not touch any test.
 - Visual bugs → snapshot test; flow bugs → XCUITest in `UITests/Regression/`.
+- **Pipeline and configuration bugs** (CI workflows, `.gitignore`, Dependabot, coverage scripts) are regression-tested too, in `scripts/tests/` (Python `unittest`), run by the `Repository regression tests` job:
+
+```bash
+python3 -m unittest discover -s scripts/tests -v
+```
+
+A regression test is only accepted if it **fails when the bug is reintroduced**. Check it locally before opening the PR.

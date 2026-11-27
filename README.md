@@ -77,9 +77,28 @@ No direct pushes. Every change goes through a pull request with green checks; QA
 
 ## Getting started
 
-> 🚧 The Xcode project is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) and arrives with the Sprint 0 scaffold.
+Requirements: macOS, Xcode 26 (the project also builds with Xcode 16), Homebrew and an Apple Developer account. Deployment target: **iOS 18** ([ADR 0005](docs/adr/0005-minimum-ios-18-progressive-enhancement.md)).
 
-Requirements: macOS, Xcode 26+, an Apple Developer account and the Firebase config files provided per environment.
+```bash
+brew install xcodegen swiftlint swiftformat
+xcodegen generate
+open TheClosetSelect.xcodeproj
+```
+
+The `.xcodeproj` is generated from [`project.yml`](project.yml) and is not committed. To run on a device, create `Config/Local.xcconfig` (git-ignored) with your team:
+
+```
+DEVELOPMENT_TEAM = XXXXXXXXXX
+```
+
+Schemes: `TheClosetSelect-Dev`, `TheClosetSelect-QA`, `TheClosetSelect-Prod`. Each installs as a separate app.
+
+Package tests run anywhere Swift runs:
+
+```bash
+swift test --package-path Packages/Core
+swift test --package-path Packages/DesignSystem
+```
 
 ## Status
 

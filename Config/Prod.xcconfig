@@ -1,0 +1,5 @@
+#include "Base.xcconfig"
+
+APP_ENV = prod
+APP_DISPLAY_NAME = The Closet Select
+PRODUCT_BUNDLE_IDENTIFIER = $(BASE_BUNDLE_ID)

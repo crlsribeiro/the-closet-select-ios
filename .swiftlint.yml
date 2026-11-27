@@ -1,8 +1,8 @@
 # SwiftLint configuration — rules are part of the Definition of Done.
 included:
   - App
+  - AppTests
   - Packages
-  - Widgets
 excluded:
   - "**/.build"
   - "**/DerivedData"
