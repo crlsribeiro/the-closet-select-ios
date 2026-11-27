@@ -1,6 +1,6 @@
 # 4. No third-party secrets in the client
 
-- Status: Accepted
+- Status: Accepted — implementation updated by [ADR 0006](0006-aws-backend-with-amplify-gen2.md) (AWS instead of Firebase)
 - Date: 2026-11-26
 
 ## Context

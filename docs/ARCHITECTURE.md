@@ -10,7 +10,7 @@ TheClosetSelect/
 ├── Packages/
 │   ├── DesignSystem/         # colors, typography, components, skeleton, animations
 │   ├── Core/                 # domain models, repository protocols, use cases, look engine
-│   ├── Data/                 # Firebase, WeatherKit, AI gateway, SwiftData
+│   ├── Data/                 # Apollo GraphQL, Amplify Auth/Storage, WeatherKit, SwiftData
 │   └── Features/
 │       ├── Onboarding/       # splash, sign in, profile, color analysis, workplace
 │       ├── Today/            # three looks carousel, daily energy card
@@ -21,7 +21,7 @@ TheClosetSelect/
 └── Config/                   # Dev.xcconfig, QA.xcconfig, Prod.xcconfig
 ```
 
-Dependency direction: `Features → Core ← Data`. `Core` imports no Apple UI framework and no Firebase.
+Dependency direction: `Features → Core ← Data`. `Core` imports no Apple UI framework and no backend SDK.
 
 ## Feature flow
 
@@ -32,7 +32,7 @@ View (SwiftUI) ──reads──▶ ViewModel (@Observable, @MainActor)
                           UseCase (struct, pure, testable)
                               │ uses protocol
                               ▼
-                          Repository (Firestore · WeatherKit · AI gateway · SwiftData)
+                          Repository (AppSync GraphQL · WeatherKit · S3 · SwiftData)
 ```
 
 ## Screen state
@@ -61,20 +61,33 @@ Protocol-based, injected through initializers and a small container exposed via 
 
 ## Data and backend
 
+AWS, defined as code with Amplify Gen 2 in `the-closet-select-backend` ([ADR 0006](adr/0006-aws-backend-with-amplify-gen2.md)), single region us-east-1 ([ADR 0007](adr/0007-single-region-us-east-1.md)).
+
+```
+iPhone ── Apollo iOS (GraphQL) ──▶ AppSync ──▶ DynamoDB (owner-scoped)
+   │                                  └──▶ Lambda (daily color, look descriptions, account deletion/export)
+   ├── Amplify Auth ───────────────▶ Cognito (e-mail, Apple, Google)
+   ├── Amplify Storage ────────────▶ S3 (private, pre-signed URLs)
+   └── WeatherKit · Vision · local notification · SwiftData cache
+EventBridge Scheduler ──▶ Lambda ──▶ DailyColor (12 signs per day)
+```
+
 | Concern | Choice |
 |---|---|
-| Auth | Firebase Auth: e-mail/password, Sign in with Apple, Google |
-| Data | Firestore (user profile, garments, daily looks, wear history) |
-| Images | Firebase Storage (garment photos with background removed) |
+| Auth | Cognito: e-mail/password, Sign in with Apple, Google |
+| API | Single GraphQL API (AppSync); Lambdas exposed as custom queries/mutations |
+| Data | DynamoDB: User, Garment, Look (`garmentIds`), WearEvent, DailyColor. `logWear` updates the event and garment counters atomically |
+| Photos | S3 private bucket, per-user prefix, HEIC 1024 px + 300 px thumbnail, pre-signed URLs |
+| Look engine and 30-day report | On device, in `Core` ([ADR 0009](adr/0009-on-device-look-engine-and-local-notification.md)) |
+| Morning notification | Local notification at the user's chosen time |
+| Weather | WeatherKit on device |
+| AI descriptions | Lambda (Bedrock or external provider), per-user quota and cache, in the user's locale |
 | Offline | SwiftData cache of closet and today's looks |
-| Daily looks | Scheduled Cloud Function per time zone: weather + daily color + look engine → Firestore → APNs |
-| Weather | WeatherKit (REST on the server, native on device) |
-| AI | Cloud Function gateway, protected by Auth + App Check. Receives the user locale and returns text in that language. |
 
 ## Security and privacy
 
 - **No third-party API keys in the app.** All AI and external APIs are called server-side.
-- Firebase App Check on every backend call.
+- Every API call is authenticated with Cognito; authorization rules are owner-based and covered by cross-user tests.
 - Selfie for color analysis is processed **on device** (Vision) and never uploaded or stored; only derived values (skin tone hex, season) are saved.
-- Per-environment Firebase projects; config files are injected by CI and never committed.
-- LGPD / GDPR: explicit consent screens, data export and account deletion.
+- Per-environment backend configuration (`amplify_outputs.json`) is injected by CI and never committed.
+- LGPD / GDPR: explicit consent, data export and account deletion (including Sign in with Apple token revocation). Logs contain no personal data.

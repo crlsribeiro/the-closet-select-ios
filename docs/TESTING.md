@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Unit | Swift Testing | ~55% | Every PR |
 | Acceptance (BDD) | Swift Testing on ViewModels + XCUITest (Robot pattern) | — | Every PR |
-| Integration | Swift Testing + Firebase Emulator Suite | ~20% | Every PR |
+| Integration | Swift Testing against the personal Amplify sandbox / Dev backend | ~20% | Every PR |
 | Snapshot | swift-snapshot-testing (light/dark, Dynamic Type, skeleton, en/pt-BR) | ~15% | Every PR |
 | UI / end-to-end | XCUITest | ~10% | PRs into `qa` and `main`, nightly |
 | Accessibility | `performAccessibilityAudit()` | — | PRs into `qa` and `main` |
