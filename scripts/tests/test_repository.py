@@ -43,6 +43,14 @@ class GitIgnoreRegressionTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(is_git_ignored(path), f"{path} is generated and must not be committed")
 
+    def test_no_generated_python_cache_is_tracked(self):
+        """Bug: __pycache__ files were committed after running the tests locally."""
+        tracked = subprocess.run(
+            ["git", "ls-files"], cwd=ROOT, check=True, capture_output=True, text=True
+        ).stdout.splitlines()
+        cached = [path for path in tracked if "__pycache__" in path or path.endswith(".pyc")]
+        self.assertEqual(cached, [])
+
     def test_every_script_used_by_a_workflow_exists(self):
         for workflow in WORKFLOWS:
             for script in set(re.findall(r"scripts/[\w./-]+", workflow.read_text(encoding="utf-8"))):
