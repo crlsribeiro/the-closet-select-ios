@@ -42,7 +42,7 @@ feature/TCS-12-skeleton-home
 
 | Workflow | Trigger | Jobs |
 |---|---|---|
-| `pr.yml` | Every PR | Conventional title, secrets scan, SwiftLint; build, tests, snapshots and Sonar once the Xcode project exists |
+| `pr.yml` | Every PR | Conventional title, secrets scan, SwiftLint, package tests (Linux), app build and tests (iOS simulator), coverage and SonarQube Cloud Quality Gate |
 | `deploy-dev.yml` | Merge into `develop` | Fastlane → TestFlight (Dev) |
 | `deploy-qa.yml` | Merge into `qa` | Environment approval → Fastlane → TestFlight (QA) |
 | `release.yml` | Merge into `main` | Environment approval → Fastlane → App Store Connect |
