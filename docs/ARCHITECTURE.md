@@ -32,7 +32,7 @@ View (SwiftUI) ──reads──▶ ViewModel (@Observable, @MainActor)
                           UseCase (struct, pure, testable)
                               │ uses protocol
                               ▼
-                          Repository (Firestore · WeatherKit · AI gateway · SwiftData)
+                          Repository (AppSync GraphQL · WeatherKit · S3 · SwiftData)
 ```
 
 ## Screen state

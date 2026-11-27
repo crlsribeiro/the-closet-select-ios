@@ -40,9 +40,9 @@ Every morning, busy professionals lose time and energy deciding what to wear —
 | UI | SwiftUI, Liquid Glass, SF Symbols |
 | Architecture | MVVM with `@Observable` + Clean Architecture (UseCases, Repositories) in local Swift packages |
 | Persistence | SwiftData (offline cache) |
-| Backend | Firebase Auth, Firestore, Storage, App Check, Cloud Functions |
+| Backend | AWS (Amplify Gen 2): Cognito, AppSync GraphQL, DynamoDB, S3, Lambda — [the-closet-select-backend](https://github.com/crlsribeiro/the-closet-select-backend) |
 | Platform services | WeatherKit, Vision / VisionKit, AVFoundation, Core Location, UserNotifications, StoreKit 2 |
-| AI | Server-side only (Cloud Functions) — **no API keys in the app** |
+| AI | Server-side only (AWS Lambda) — **no API keys in the app** |
 | Testing | Swift Testing, XCUITest, snapshot tests — TDD, BDD and regression policy |
 | Quality | SwiftLint, SwiftFormat, SonarQube Cloud, Danger |
 | CI/CD | GitHub Actions + Fastlane → TestFlight / App Store |

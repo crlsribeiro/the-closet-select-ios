@@ -7,7 +7,7 @@
 | Branch | `develop` | `qa` | `main` |
 | Bundle ID | `….closetselect.dev` | `….closetselect.qa` | `….closetselect` |
 | App icon | "DEV" ribbon | "QA" ribbon | official |
-| Firebase project | `closet-dev` | `closet-qa` | `closet-prod` |
+| Backend environment | Amplify `develop` | Amplify `qa` | Amplify `main` |
 | Distribution | TestFlight · internal | TestFlight · QA group | App Store |
 | Gate | PR checks | PR checks + environment approval | PR checks + environment approval |
 

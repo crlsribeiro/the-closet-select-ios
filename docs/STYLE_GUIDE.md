@@ -21,7 +21,7 @@
 | ViewModel | `<Name>ViewModel` (`@Observable @MainActor final class`) | `TodayViewModel` |
 | Use case | verb + `UseCase` | `GenerateLooksUseCase` |
 | Repository protocol | `<Name>Repository` | `GarmentRepository` |
-| Implementation | source + name | `FirestoreGarmentRepository` |
+| Implementation | source + name | `AppSyncGarmentRepository` |
 | Test fake | `Fake` + name | `FakeGarmentRepository` |
 | Tests | `<Type>Tests` | `TodayViewModelTests` |
 | Localization key | `feature.screen.element` | `today.wear.button` |
