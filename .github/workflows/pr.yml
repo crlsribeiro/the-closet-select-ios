@@ -161,7 +161,7 @@ jobs:
           python -m coverage xml -o coverage/python.xml
       - name: SonarQube Cloud analysis and Quality Gate
         if: env.HAS_SONAR_TOKEN == 'true'
-        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5.3.2
+        uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
